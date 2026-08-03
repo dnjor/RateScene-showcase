@@ -3,7 +3,7 @@
 > An Arabic community platform for rating, reviewing, and discussing movies, TV shows, and anime.
 
 <p align="center">
-  <img src="assets/screenshots/cover.png" alt="RateScene Platform" width="100%">
+  <img src="assets/screenshots/HomePage.png" alt="RateScene Platform" width="100%">
 </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
 
 RateScene is an Arabic community platform where users can discover, rate, review, and discuss movies, TV shows, and anime.
 
-The platform combines structured ratings and reviews with dedicated community spaces for each title, allowing Arabic-speaking users to share opinions, participate in discussions, and manage their watchlists in one place.
+The platform combines structured ratings and reviews with dedicated community spaces for each title, allowing Arabic-speaking users to share opinions, participate in discussions, and manage their collections in one place.
 
 RateScene was designed and developed as a production full-stack project with a strong focus on backend architecture, business logic, SEO, performance, and user experience.
 
@@ -29,7 +29,9 @@ RateScene was designed and developed as a production full-stack project with a s
 - **Live Platform:** [ratescene.app](https://ratescene.app)
 - **Current Status:** Live and actively developed
 
-The complete application is available through the live production website. Local setup is not included in this showcase repository because the production system depends on several configured external services, including PostgreSQL, Redis, Google OAuth, TMDB, Cloudinary, and email services.
+The complete application is available through the live production website.
+
+This repository is intended as a public technical showcase. The production source code and environment configuration are maintained in a separate private repository; therefore, local installation instructions are not included.
 
 ---
 
@@ -85,8 +87,8 @@ The complete application is available through the live production website. Local
 - Django
 - Django REST Framework
 - PostgreSQL
-- Cache local-memory 
 - Django ORM
+- Django Local-Memory Cache
 
 ### Frontend
 
@@ -129,7 +131,7 @@ RateScene uses a hybrid frontend architecture that combines server-rendered Djan
 
 ```mermaid
 flowchart TD
-    A[User Browser] --> B[Django Rendered Pages]
+    A[User Browser] --> B[Server-Rendered Django Pages]
     A --> C[React Components]
 
     B --> D[Django Backend]
@@ -172,8 +174,8 @@ backend/
 |---|---|
 | `accounts` | Authentication, user profiles, Google login, and account management |
 | `titles` | Movie, TV show, and anime data, search, details, and recommendations |
-| `reviews` | Ratings, reviews, Manages user collections and interactions, including Watchlist, Favorites, Watched |
-| `interactions` | likes, and dislikes |
+| `reviews` | Ratings, written reviews, and title-related user collections, including Watchlist, Favorites, and Watched |
+| `interactions` | Reusable engagement features, including likes and dislikes for reviews, posts, and comments, as well as post view tracking |
 | `discussions` | Community spaces, posts, comments, and replies |
 | `notifications` | User activity and interaction notifications |
 | `config` | Project configuration, URLs, settings, and deployment configuration |
@@ -208,7 +210,7 @@ flowchart TD
     B -- No --> C[Redirect user to login]
     B -- Yes --> D[Frontend sends API request]
 
-    D --> E[Backend authentication and permissions]
+    D --> E[Backend authentication and permission checks]
     E --> F[Validate rating and review content]
 
     F --> G{Existing review for this title?}
@@ -225,7 +227,7 @@ flowchart TD
 
 ## Data Model Overview
 
-The platform uses relational data models to connect users, titles, reviews, discussions, comments, notifications, and watchlist entries.
+The platform uses relational data models to connect users, titles, reviews, discussions, comments, notifications, and collection entries.
 
 ```mermaid
 erDiagram
@@ -255,7 +257,7 @@ More information is available in the [Data Model Documentation](docs/data-model.
 
 ### TMDB
 
-Provides movie, TV show, anime, poster, backdrop, metadata, search, and recommendation data.
+Provides movie, TV show, and anime metadata, posters, backdrops, search results, and recommendations.
 
 ### Cloudinary
 
@@ -298,7 +300,7 @@ Additional details are available in [Security and Deployment](docs/security-and-
 
 The project uses automated tests to validate important backend and frontend functionality.
 
-GitHub Actions runs configured checks when updates are pushed to the repository, helping identify issues before deployment.
+GitHub Actions runs configured checks when updates are pushed to the production repository, helping identify issues before deployment.
 
 Testing currently focuses on:
 
@@ -323,7 +325,7 @@ flowchart TD
     C --> D[Django Application]
 
     D --> E[(Managed PostgreSQL)]
-    D --> F[(Redis Cache)]
+    D --> F[Django Local-Memory Cache]
     D --> G[Cloudinary]
     D --> H[TMDB API]
     D --> I[Google OAuth]
@@ -379,11 +381,11 @@ The complete production source code and sensitive environment configuration are 
 
 ## Author
 
-Developed by **Ahmed ali aldyfy**
+Developed by **Ahmed Ali Al-Dhaifi**
 
-- LinkedIn: `https://www.linkedin.com/in/ahmed-al-dhaifi/`
-- GitHub: `https://github.com/dnjor`
-- Live Platform: [ratescene.app](https://ratescene.app)
+- [LinkedIn](https://www.linkedin.com/in/ahmed-al-dhaifi/)
+- [GitHub](https://github.com/dnjor)
+- [Live Platform](https://ratescene.app)
 
 ---
 
