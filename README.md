@@ -14,13 +14,24 @@
 
 ---
 
+## Technical Snapshot
+
+- **Backend:** Python, Django, Django REST Framework
+- **Frontend:** React, Vite, Django Templates
+- **Database:** PostgreSQL with Django ORM
+- **Architecture:** Hybrid SSR/SPA, REST APIs, and a service layer for business logic
+- **Quality:** 400+ automated tests and continuous integration with GitHub Actions
+- **Deployment:** DigitalOcean, Managed PostgreSQL, WhiteNoise, and Cloudinary
+
+---
+
 ## Overview
 
 RateScene is an Arabic community platform where users can discover, rate, review, and discuss movies, TV shows, and anime.
 
 The platform combines structured ratings and reviews with dedicated community spaces for each title, allowing Arabic-speaking users to share opinions, participate in discussions, and manage their collections in one place.
 
-RateScene was designed and developed as a production full-stack project with a strong focus on backend architecture, business logic, SEO, performance, and user experience.
+I designed and developed RateScene end to end as a production full-stack project, with a strong focus on backend architecture, business logic, SEO, performance, and user experience.
 
 ---
 
@@ -298,11 +309,11 @@ Additional details are available in [Security and Deployment](docs/security-and-
 
 ## Testing and Continuous Integration
 
-The project uses automated tests to validate important backend and frontend functionality.
+RateScene includes **400+ automated tests** covering critical backend and frontend behavior.
 
-GitHub Actions runs configured checks when updates are pushed to the production repository, helping identify issues before deployment.
+GitHub Actions runs the configured test and build checks whenever updates are pushed to the production repository, helping identify regressions before deployment.
 
-Testing currently focuses on:
+Coverage includes:
 
 - Authentication
 - Permissions
