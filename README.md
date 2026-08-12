@@ -90,6 +90,19 @@ This repository is intended as a public technical showcase. The production sourc
 
 ---
 
+## Engineering Highlights
+
+- Hybrid server-rendered and client-rendered architecture, using Django for SEO-sensitive content and React for interactive experiences
+- REST API design with Django REST Framework
+- Service-layer business logic to keep application rules reusable and separate from presentation concerns
+- Relational data modeling with PostgreSQL and Django ORM
+- Authentication, ownership checks, permissions, validation, throttling, and production security configuration
+- 400+ automated tests covering critical application behavior, with continuous integration through GitHub Actions
+- Production deployment with DigitalOcean, Managed PostgreSQL, Cloudinary, WhiteNoise, HTTPS, and a custom domain
+- External integrations with TMDB, Google OAuth, analytics, media storage, and email services
+
+---
+
 ## Technology Stack
 
 ### Backend
@@ -264,30 +277,6 @@ More information is available in the [Data Model Documentation](docs/data-model.
 
 ---
 
-## External Integrations
-
-### TMDB
-
-Provides movie, TV show, and anime metadata, posters, backdrops, search results, and recommendations.
-
-### Cloudinary
-
-Stores and optimizes user-uploaded profile images.
-
-### Google OAuth
-
-Allows users to register and sign in using their Google accounts.
-
-### Google Analytics
-
-Tracks platform traffic, user acquisition sources, and page activity.
-
-### Email Services
-
-Support account-related communication and password recovery processes.
-
----
-
 ## Security and Validation
 
 The project includes several security and validation measures:
@@ -373,20 +362,7 @@ flowchart TD
 
 ## Repository Purpose
 
-This repository is a public technical showcase for RateScene.
-
-It presents:
-
-- The platform's functionality
-- System architecture
-- Backend design
-- Business rules
-- Data relationships
-- Technical decisions
-- Security practices
-- Deployment structure
-
-The complete production source code and sensitive environment configuration are maintained separately.
+This repository is a public technical showcase for RateScene. It highlights the platform's functionality, engineering architecture, business rules, testing approach, security practices, and deployment structure while keeping the complete production source code and sensitive environment configuration private.
 
 ---
 
