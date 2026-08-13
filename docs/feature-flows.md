@@ -192,3 +192,136 @@ The author's rating is attached with a correlated `Subquery`, and reaction data 
 **The service layer enforces product rules, while database constraints preserve record integrity.**
 
 RateScene keeps one rating and one review per user/title pair, updates existing records instead of duplicating them, and requires an existing rating before accepting a written review.
+
+---
+
+## 3. Discussion Thread Lifecycle
+
+RateScene threads are built on top of normal comment replies.
+
+A reply does not automatically create a thread. A thread starts only when the owner of a comment chooses to continue the discussion with a user who directly replied to that comment.
+
+### At a Glance
+
+```mermaid
+flowchart LR
+    A[Normal Comment] --> B[Direct Reply]
+    B --> C{Parent owner starts thread?}
+    C -- No --> D[Remain normal comments]
+    C -- Yes --> E[Create or reuse Thread]
+    E --> F[Participants: Read + Write]
+    E --> G[Others and Guests: Read only]
+    F --> H[Message committed]
+    H --> I[Notify other participant]
+```
+
+### Roles and Thread Creation
+
+Consider this comment structure:
+
+```text
+A writes a comment
+│
+├── B replies
+├── C replies
+└── G replies
+```
+
+At this point, these are only normal comments.
+
+If A chooses B's reply and starts a discussion, the backend verifies that A owns the comment B directly replied to:
+
+```python
+original_comment = reply.parent
+
+if original_comment is None:
+    raise ValidationError(...)
+
+if original_comment.user_id != user.id:
+    raise PermissionDenied(...)
+```
+
+If the relationship is valid, the thread is created between the **parent comment owner** and the **direct reply author**.
+
+The rule is based on the direct parent, not the post owner or the root comment owner. For example:
+
+```text
+A
+└── B
+    └── C
+```
+
+Because C directly replied to B, B can start a thread with C.
+
+### One Thread per Relationship
+
+RateScene reuses an existing thread for the same comment and participants instead of creating duplicate conversations:
+
+```python
+thread, created = Thread.objects.get_or_create(
+    comment=original_comment,
+    user1=user,
+    user2=reply.user,
+    defaults={"is_active": True},
+)
+```
+
+The database reinforces this with a unique constraint:
+
+```python
+models.UniqueConstraint(
+    fields=["comment", "user1", "user2"],
+    name="unique_comment_participant_thread",
+)
+```
+
+This keeps one conversation associated with the same comment-participant relationship.
+
+### Public Read, Participant-Only Write
+
+Active threads are intentionally visible to the wider community, while participation is restricted to the two users in the thread.
+
+```text
+Thread: A ↔ B
+
+A       → Read + Write
+B       → Read + Write
+C       → Read only
+Guest   → Read only
+```
+
+Before accepting a new thread message, the backend resolves the thread only if the authenticated user is one of its participants:
+
+```python
+Thread.objects.filter(
+    Q(user1=user) | Q(user2=user)
+)
+```
+
+An unauthenticated user cannot write, and an authenticated outsider cannot add messages to the thread.
+
+> **Public visibility does not imply public participation.**
+
+### Transactions and Notifications
+
+The initial thread creation and its first message are handled atomically:
+
+```python
+@transaction.atomic
+def create_thread_from_reply(...):
+    ...
+```
+
+Messages added later are also handled transactionally. Notifications to the other participant are scheduled with:
+
+```python
+transaction.on_commit(...)
+```
+
+so a notification is created only after the corresponding database operation succeeds.
+
+### Engineering Principle
+
+The thread model separates **conversation visibility** from **participation rights**.
+
+Normal comment trees remain open to the community, while focused threads preserve a controlled two-user conversation based on the direct reply relationship.
