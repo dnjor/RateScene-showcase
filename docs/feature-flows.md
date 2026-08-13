@@ -76,3 +76,119 @@ Changes that involve both account and profile data are performed inside a databa
 **The frontend controls the interface. The backend controls authorization.**
 
 Profile ownership is derived from the authenticated server-side request identity rather than from a client-selected user identifier.
+
+---
+
+## 2. Rating & Review — Unique User/Title Records
+
+RateScene treats both ratings and written reviews as unique records for a specific user and title. Re-submitting either action updates the existing record instead of creating duplicates.
+
+A written review has one additional business rule: the user must rate the title before a review can be created.
+
+### Request Flow
+
+```mermaid
+flowchart TD
+    A[User rates a title] --> B{Rating exists for user + title?}
+    B -- No --> C[Create Rating]
+    B -- Yes --> D[Update existing Rating]
+    C --> E[One Rating per user + title]
+    D --> E
+
+    E --> F[User writes a Review]
+    F --> G{Rating exists for this user + title?}
+    G -- No --> H[Reject Review]
+    G -- Yes --> I{Review exists for user + title?}
+    I -- No --> J[Create Review]
+    I -- Yes --> K[Update existing Review]
+    J --> L[One Review per user + title]
+    K --> L
+```
+
+### Rating — Create Once, Then Update
+
+The rating service uses `update_or_create()` with the authenticated user and title as the lookup pair:
+
+```python
+rating, created = TitleRating.objects.update_or_create(
+    user=user,
+    title=title,
+    defaults={"score": score},
+)
+```
+
+The first rating creates the record. Rating the same title again updates that same user/title record rather than creating another one.
+
+The database reinforces this rule with a unique constraint:
+
+```python
+models.UniqueConstraint(
+    fields=["user", "title"],
+    name="unique_user_title_rating",
+)
+```
+
+### Review — Rating Required First
+
+Before creating or updating a written review, the service verifies that the same user already has a rating for the same title:
+
+```python
+if not user_has_rating_for_title(user=user, title=title):
+    raise ValueError("التقييم مطلوب قبل المراجعة.")
+```
+
+This rule is enforced on the backend, so the frontend may guide the user through the intended sequence, but it cannot bypass the requirement with a manually constructed request.
+
+Once the requirement is satisfied, the review follows the same create-or-update pattern:
+
+```python
+return TitleReview.objects.update_or_create(
+    user=user,
+    title=title,
+    defaults={"body": body},
+)
+```
+
+The database also guarantees one review per user/title pair:
+
+```python
+models.UniqueConstraint(
+    fields=["user", "title"],
+    name="unique_user_title_review",
+)
+```
+
+### Response-Ready Review Data
+
+A review response contains more than the review body. The response serializer exposes the review details together with the author's rating, author/profile information, title context, and reaction state.
+
+```text
+Review
+├── id, body, user_rating, timestamps
+Author
+├── username, display_name, profile_image
+Title
+├── tmdb_id, media_type, title
+Reactions
+├── like_count, dislike_count, user_reaction
+```
+
+The review queryset is prepared before serialization with related data and annotations:
+
+```python
+TitleReview.objects
+    .filter(title=title)
+    .select_related(
+        "user",
+        "user__profile",
+        "title",
+    )
+```
+
+The author's rating is attached with a correlated `Subquery`, and reaction data is annotated before the response is serialized. This avoids performing a separate rating lookup for every review item.
+
+### Engineering Principle
+
+**The service layer enforces product rules, while database constraints preserve record integrity.**
+
+RateScene keeps one rating and one review per user/title pair, updates existing records instead of duplicating them, and requires an existing rating before accepting a written review.
