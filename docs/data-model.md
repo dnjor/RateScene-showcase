@@ -59,7 +59,9 @@ This means the platform supports many users interacting with many titles, while 
 
 - `TitleRating` stores the user's score for a title.
 - `TitleReview` stores the user's written review.
-- `UserTitleInteraction` stores personal title state such as favorite and watch status.
+- `UserTitleInteraction` stores the user's personal state for a title, including:
+  - `watch_status`: `watchlist`, `watched`, or no watch state.
+  - `is_favorite`: `true` or `false`.
 
 ### One Record per User and Title
 
@@ -82,7 +84,11 @@ User + Title
 ├── One Rating
 ├── One Review
 └── One UserTitleInteraction
+    ├── watch_status → watchlist / watched / none
+    └── is_favorite → true / false
 ```
+
+> `UserTitleInteraction` is one consolidated record for the user-title relationship, not a single interaction type.
 
 This allows many users to interact with the same title while preventing duplicate state for the same user.
 
