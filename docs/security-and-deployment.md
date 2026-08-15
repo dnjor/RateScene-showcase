@@ -65,3 +65,30 @@ flowchart TD
 | Accounts | Email addresses must have a valid format and be unique. Usernames must be valid and unique, and passwords are checked using Django's password-validation rules. Email and username uniqueness checks are case-insensitive. |
 
 Invalid requests are rejected with clear validation errors and are not saved to the database.
+
+## API Throttling
+
+RateScene applies different request limits according to the risk and cost of each operation. General limits reduce excessive resource use, stricter account limits slow automated credential attacks, and content-specific limits reduce spam.
+
+### Throttling Flow
+
+```mermaid
+flowchart TD
+    A[Client sends API request] --> B[Identify user or IP]
+    B --> C[Apply endpoint rate limit]
+    C --> D{Limit exceeded?}
+    D -- Yes --> E[Return 429 Too Many Requests]
+    D -- No --> F[Continue request processing]
+```
+
+### Protection Levels
+
+| Area | Representative limits | Purpose |
+|---|---|---|
+| General API access | Anonymous visitors: 300/hour; authenticated users: 2,000/day | Prevent one client from continuously consuming application resources |
+| Sensitive account actions | Login: 5/minute; registration: 5/hour; password reset: 3/hour | Slow password guessing and automated account abuse |
+| Content and interactions | Posts: 5/minute; comments: 10/minute; reviews: 10/hour; reactions: 30/minute | Reduce automated spam and repeated low-effort submissions |
+
+Review creation has a stricter hourly limit because reviews are intended to contain meaningful opinions rather than rapid repeated submissions. Legitimate users can occasionally reach this limit during unusually high activity; the API responds with `429 Too Many Requests` and allows the operation again after the throttling period expires.
+
+Login responses use a general invalid-credentials message rather than revealing whether a particular email address exists. Repeated failed attempts against the Django admin are also protected by a temporary login lockout.
