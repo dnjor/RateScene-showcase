@@ -92,3 +92,33 @@ flowchart TD
 Review creation has a stricter hourly limit because reviews are intended to contain meaningful opinions rather than rapid repeated submissions. Legitimate users can occasionally reach this limit during unusually high activity; the API responds with `429 Too Many Requests` and allows the operation again after the throttling period expires.
 
 Login responses use a general invalid-credentials message rather than revealing whether a particular email address exists. Repeated failed attempts against the Django admin are also protected by a temporary login lockout.
+
+## Production Security and Deployment
+
+RateScene combines production security settings with managed deployment infrastructure. Environment-specific configuration keeps development convenient while enabling stricter controls in production.
+
+### Production Setup
+
+| Area | Implementation |
+|---|---|
+| Hosting | The Django application is deployed on DigitalOcean and served with Gunicorn |
+| Database | Managed PostgreSQL is used with an SSL-configurable database connection |
+| HTTPS | Production settings redirect HTTP requests to HTTPS and enable HSTS |
+| Secure cookies | Session and CSRF cookies are transmitted only over HTTPS in production |
+| Secret management | Django, database, Google, email, TMDB, and Cloudinary credentials are loaded from environment variables; `.env` files are excluded from version control |
+| Request trust | Allowed hosts and trusted CSRF origins are configured through environment variables |
+| Static and media files | WhiteNoise serves versioned static assets, while Cloudinary stores uploaded media |
+| Continuous integration | GitHub Actions checks Django configuration and migrations, runs backend tests, lints the frontend, and verifies the production frontend build |
+
+### Deployment Flow
+
+```mermaid
+flowchart TD
+    A[User over HTTPS] --> B[DigitalOcean]
+    B --> C[Gunicorn and Django]
+    C --> D[(Managed PostgreSQL over SSL)]
+    C --> E[Cloudinary media]
+    C --> F[External services]
+```
+
+Production mode disables Django debug output so internal stack traces and configuration details are not exposed to users. Sensitive values are supplied by the deployment environment rather than committed with the application source.
