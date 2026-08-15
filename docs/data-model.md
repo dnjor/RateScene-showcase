@@ -251,3 +251,96 @@ Comment
 A thread therefore keeps its relationship to the discussion it originated from while storing its messages separately from normal comments.
 
 > For thread creation rules, participant permissions, public visibility, transactions, and notifications, see [Discussion Thread Lifecycle](feature-flows.md#3-discussion-thread-lifecycle).
+
+---
+
+## 4. Shared Interaction & Notification Models
+
+RateScene uses shared models for behavior that can apply across different parts of the platform instead of creating feature-specific models for each content type.
+
+### Generic Reactions
+
+A single `Reaction` model handles likes and dislikes across supported content objects.
+
+```mermaid
+flowchart LR
+    U[User] --> R[Reaction]
+
+    R --> CT[content_type]
+    R --> ID[object_id]
+
+    CT --> O[content_object]
+    ID --> O
+
+    R --> V{value}
+    V --> L[LIKE +1]
+    V --> D[DISLIKE -1]
+```
+
+A reaction target is identified using two values:
+
+- `content_type` identifies the type of model.
+- `object_id` identifies the specific record within that model.
+
+Django's `GenericForeignKey` combines them into `content_object`:
+
+```python
+content_object = GenericForeignKey(
+    "content_type",
+    "object_id",
+)
+```
+
+This allows one reaction model to be reused across different supported content types rather than introducing separate like/dislike models for each feature.
+
+Each user can have only one reaction for the same target:
+
+```mermaid
+flowchart LR
+    U[User] --> K[content_type + object_id]
+    K --> R[One Reaction]
+    R --> L[LIKE]
+    R --> D[DISLIKE]
+```
+
+Database constraints also restrict the stored reaction value to `+1` for Like or `-1` for Dislike.
+
+### Post View Identity
+
+Post views support both authenticated users and anonymous visitors while keeping one clear visitor identity per view.
+
+```mermaid
+flowchart TD
+    PV[PostView]
+    PV --> P[Post]
+    PV --> I{Visitor Identity}
+    I --> U[Logged-in User]
+    I --> G[Guest visitor_key]
+```
+
+A view uses either `user` or `visitor_key`, never both.
+
+Separate uniqueness rules prevent the same logged-in user or the same guest session from producing duplicate view records for the same post.
+
+### Notifications
+
+Notifications connect a recipient with the user or event that caused the notification and can reference related platform content through the same generic-target pattern.
+
+```mermaid
+flowchart LR
+    A[Actor] --> N[Notification]
+    N --> R[Recipient]
+    N --> T[type]
+    N --> CT[content_type]
+    N --> ID[object_id]
+    CT --> O[content_object]
+    ID --> O
+```
+
+This allows one notification model to reference different supported content types without requiring a separate notification model for each feature.
+
+`SYSTEM` notifications may exist without a content target, while other notification types require both `content_type` and `object_id`.
+
+### Engineering Principle
+
+Shared interaction models keep cross-cutting features reusable while database constraints preserve valid identities, unique reactions, and consistent generic content relationships.
