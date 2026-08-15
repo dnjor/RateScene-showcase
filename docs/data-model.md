@@ -185,3 +185,69 @@ This preserves the title's historical rating and review data without retaining t
 The user-title model separates different kinds of state instead of combining them into one large relationship.
 
 Ratings, reviews, and personal collection state each have their own lifecycle and integrity rules, while database constraints keep each user/title relationship unique and consistent.
+
+---
+
+## 3. Discussion & Thread Relationships
+
+RateScene organizes discussions around `Space` objects. A space defines the context of the discussion, while posts, comments, replies, and threads follow the same structure regardless of that context.
+
+### Space Context
+
+A `Space` can be `GLOBAL`, `CUSTOM`, or `TITLE`.
+
+```mermaid
+flowchart TD
+    S[Space]
+
+    S --> G[GLOBAL]
+    S --> C[CUSTOM]
+    S --> T[TITLE]
+
+    T -. One-to-One .-> TITLE[Title]
+
+    G --> P[Post]
+    C --> P
+    T --> P
+
+    P --> CM[Comment]
+    CM --> R[Comment Reply]
+    R --> NR[Nested Reply]
+
+    CM -. anchors .-> TH[Thread]
+    TH --> TM[ThreadMessage]
+```
+
+All three space types can contain posts.
+
+A `TITLE` space has one additional relationship: it can be connected to a specific `Title` through a one-to-one relationship.
+
+### Discussion Hierarchy
+
+The discussion structure remains the same regardless of the space type:
+
+```text
+Space
+└── Post
+    └── Comment
+        └── Comment (Reply)
+            └── Comment (Nested Reply)
+```
+
+Replies do not use a separate model. They reuse the `Comment` model through self-referencing relationships.
+
+`parent` identifies the comment being directly replied to, while `root` keeps replies associated with the same comment tree.
+
+Threads form a separate focused conversation layer connected to the comment structure:
+
+```text
+Comment
+└── Thread
+    ├── Participant 1
+    ├── Participant 2
+    └── ThreadMessages
+```
+
+A thread therefore keeps its relationship to the discussion it originated from while storing its messages separately from normal comments.
+
+> For thread creation rules, participant permissions, public visibility, transactions, and notifications, see [Discussion Thread Lifecycle](feature-flows.md#3-discussion-thread-lifecycle).
