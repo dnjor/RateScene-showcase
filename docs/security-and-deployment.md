@@ -38,3 +38,30 @@ flowchart TD
 Permission checks are enforced on the server. Staff-only operations reject requests from users who do not have the required permission. Ownership-sensitive operations use the authenticated user rather than trusting a user identifier supplied by the client.
 
 > Review deletion and some content-management controls are not currently exposed as completed web features. Unfinished mobile authentication is outside the scope of this document.
+
+## Server-Side Validation
+
+RateScene validates incoming data on the backend before applying business rules or saving changes. Frontend validation provides faster feedback, but backend validation remains the final authority because API requests can be sent directly.
+
+### Validation Flow
+
+```mermaid
+flowchart TD
+    A[Frontend submits data] --> B[Backend serializer]
+    B --> C{Format and values valid?}
+    C -- No --> D[Return validation errors]
+    C -- Yes --> E[Apply business rules]
+    E --> F{Rules satisfied?}
+    F -- No --> D
+    F -- Yes --> G[Save to PostgreSQL]
+```
+
+### Examples
+
+| Area | Validation |
+|---|---|
+| Posts | The title is optional and limited to 255 characters. Content is required, cannot contain only whitespace, and is limited to 5,000 characters. Posts in title-specific spaces must include a valid topic type. |
+| Ratings | Scores must be numeric, range from 1.0 to 10.0, and use whole or half-point values such as 7.0 or 7.5. Each user can have only one rating per title. |
+| Accounts | Email addresses must have a valid format and be unique. Usernames must be valid and unique, and passwords are checked using Django's password-validation rules. Email and username uniqueness checks are case-insensitive. |
+
+Invalid requests are rejected with clear validation errors and are not saved to the database.
